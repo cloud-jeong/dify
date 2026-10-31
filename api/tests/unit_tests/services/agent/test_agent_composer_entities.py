@@ -32,7 +32,13 @@ def test_default_agent_soul_enables_file_upload_feature() -> None:
 
 
 def test_workflow_variant_rejects_agent_app_only_fields() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=(
+            "1 validation error for ComposerSavePayload\\\n  Value error, Workflow "
+            "Variant must not include app variables"
+        ),
+    ):
         ComposerSavePayload.model_validate(
             {
                 "variant": ComposerVariant.WORKFLOW,
@@ -45,7 +51,13 @@ def test_workflow_variant_rejects_agent_app_only_fields() -> None:
 
 
 def test_agent_app_variant_rejects_workflow_node_job() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=(
+            "1 validation error for ComposerSavePayload\\\n  Value error, Agent "
+            "App Variant must not include workflow node job config"
+        ),
+    ):
         ComposerSavePayload.model_validate(
             {
                 "variant": ComposerVariant.AGENT_APP,
@@ -195,6 +207,38 @@ def test_knowledge_query_mode_uses_stable_backend_enums() -> None:
     )
 
     assert config.knowledge.sets[0].query.mode == AgentKnowledgeQueryMode.GENERATED_QUERY
+
+
+@pytest.mark.parametrize("with_space", [False, True])
+def test_publish_accepts_classic_knowledge_with_or_without_agent_knowledge(with_space: bool) -> None:
+    knowledge: dict[str, object] = {
+        "sets": [
+            {
+                "id": "classic",
+                "name": "Classic Docs",
+                "datasets": [{"id": "dataset-1"}],
+                "query": {"mode": "generated_query"},
+                "retrieval": {"mode": "multiple", "top_k": 4},
+            }
+        ]
+    }
+    if with_space:
+        knowledge["spaces"] = [
+            {
+                "id": "new",
+                "name": "New Docs",
+                "control_space_id": "00000000-0000-4000-8000-000000000001",
+            }
+        ]
+    payload = ComposerSavePayload.model_validate(
+        {
+            "variant": ComposerVariant.AGENT_APP,
+            "save_strategy": ComposerSaveStrategy.SAVE_AS_NEW_VERSION,
+            "agent_soul": {"knowledge": knowledge},
+        }
+    )
+
+    ComposerConfigValidator.validate_publish_payload(payload)
 
 
 @pytest.mark.parametrize(
