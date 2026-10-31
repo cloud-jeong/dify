@@ -2,7 +2,8 @@ import { IS_DEV } from '@/config'
 import Script from '@/next/script'
 
 export function ReactScanLoader() {
-  if (!IS_DEV) return null
+  // Locally disabled
+  if (!IS_DEV || true) return null
 
   return (
     <Script
