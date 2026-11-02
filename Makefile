@@ -7,7 +7,8 @@ VERSION=latest
 DOCKER_DIR=docker
 DOCKER_MIDDLEWARE_ENV=$(DOCKER_DIR)/middleware.env
 DOCKER_MIDDLEWARE_ENV_EXAMPLE=$(DOCKER_DIR)/envs/middleware.env.example
-DOCKER_MIDDLEWARE_PROJECT=dify-middlewares-dev
+DOCKER_MIDDLEWARE_PROJECT=dify
+#DOCKER_MIDDLEWARE_PROJECT=dify-middlewares-dev
 
 # Default target - show help
 .DEFAULT_GOAL := help

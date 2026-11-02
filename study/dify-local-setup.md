@@ -44,11 +44,31 @@ uv python install 3.13   # (선택) uv로 Python 3.13 설치
 
 ---
 
-## 3. 환경 초기 설정
+## 3. 실행 순서 요약
+
+```bash
+# 최초 1회
+./dev/setup
+#   → api/.env, web/.env.local, docker/middleware.env 검토
+
+# 매번 (각각 별도 터미널)
+./dev/start-docker-compose   # 1. 미들웨어
+./dev/start-api              # 2. API      :5001 (마이그레이션 포함)
+./dev/start-worker           # 3. Worker
+./dev/start-web              # 4. Web      :3000
+./dev/start-beat             # 5. (선택) Beat
+
+# docker middleware down & volume 삭제
+DOCKER_MIDDLEWARE_PROJECT=dify make dev-clean
+```
+
+---
+
+## 4. 환경 초기 설정
 
 두 가지 방법 중 하나를 사용합니다. **둘을 섞어 쓰지 않는 것**이 좋습니다(아래 3.3 주의 참고).
 
-### 3.1 방법 A — `dev/` 스크립트 (공식 권장)
+### 4.1 방법 A — `dev/` 스크립트 (공식 권장)
 
 ```bash
 ./dev/setup
@@ -64,7 +84,7 @@ uv python install 3.13   # (선택) uv로 Python 3.13 설치
 
 > ⚠️ `dev/setup`은 env 파일을 **무조건 덮어씁니다**(`cp`). 이미 수정한 `api/.env`, `web/.env.local`, `docker/middleware.env`가 있다면 백업 후 실행하세요.
 
-### 3.2 방법 B — `Makefile` 타깃
+### 4.2 방법 B — `Makefile` 타깃
 
 ```bash
 make dev-setup     # = prepare-docker + prepare-web + prepare-api
@@ -79,7 +99,7 @@ make dev-setup     # = prepare-docker + prepare-web + prepare-api
 
 Makefile 방식은 기존 env 파일을 **덮어쓰지 않으며**, DB 마이그레이션까지 한 번에 수행합니다.
 
-### 3.3 주의: Compose 프로젝트명 차이
+### 4.3 주의: Compose 프로젝트명 차이
 
 | 실행 방법                                | Compose 프로젝트명(`-p`) |
 | ---------------------------------------- | ------------------------ |
@@ -93,7 +113,7 @@ cd docker
 docker compose -f docker-compose.middleware.yaml --env-file middleware.env -p dify down
 ```
 
-### 3.4 env 파일 검토 포인트
+### 4.4 env 파일 검토 포인트
 
 - **`api/.env`**
   - `SECRET_KEY`: 비워두면 storage 디렉토리에 영구 키를 자동 생성. 직접 관리하려면 `openssl rand -base64 42`로 생성해 설정
@@ -108,11 +128,11 @@ docker compose -f docker-compose.middleware.yaml --env-file middleware.env -p di
 
 ---
 
-## 4. 서비스 실행
+## 5. 서비스 실행
 
 각 장기 실행 프로세스는 **터미널을 따로** 띄워 실행합니다.
 
-### 4.1 미들웨어 (Docker)
+### 5.1 미들웨어 (Docker)
 
 ```bash
 ./dev/start-docker-compose
@@ -141,7 +161,7 @@ make dev-clean
 | `ssrf_proxy`    | 3128               | 외부 요청 SSRF 방지 프록시 |
 | `local_sandbox` | 5004               | dify-agent 로컬 샌드박스   |
 
-### 4.2 API 서버
+### 5.2 API 서버
 
 ```bash
 ./dev/start-api
@@ -162,7 +182,7 @@ uv run dotenv -f .env run --no-override -- python -m app   # gevent pywsgi 서�
   LOG_LEVEL=DEBUG ./dev/start-api
   ```
 
-### 4.3 Web (프론트엔드)
+### 5.3 Web (프론트엔드)
 
 ```bash
 ./dev/start-web
@@ -184,7 +204,7 @@ uv run dotenv -f .env run --no-override -- python -m app   # gevent pywsgi 서�
 
 > 참고: 이 브랜치에서는 `web/app/components/devtools/react-scan/loader.tsx`에서 React Scan을 로컬에서 비활성화해 두었습니다(커밋 `4fe0fa6a42`). 렌더링 성능 분석이 필요하면 `|| true`를 제거하세요.
 
-### 4.4 Celery Worker (비동기 작업)
+### 5.4 Celery Worker (비동기 작업)
 
 문서 인덱싱, 워크플로우 비동기 실행, 메일 발송, 플러그인 작업 등은 Worker가 있어야 처리됩니다. **지식베이스(RAG) 문서 업로드를 테스트하려면 반드시 실행**해야 합니다.
 
@@ -198,7 +218,7 @@ uv run dotenv -f .env run --no-override -- python -m app   # gevent pywsgi 서�
 
 주요 큐: `dataset`(RAG 인덱싱), `workflow`(워크플로우), `mail`, `plugin`, `ops_trace`, `schedule_poller`/`schedule_executor`(스케줄 트리거) 등. `DEPLOYMENT_EDITION=CLOUD`이면 `workflow_professional/team/sandbox` 큐가 대신 사용됩니다.
 
-### 4.5 Celery Beat (주기 작업, 선택)
+### 5.5 Celery Beat (주기 작업, 선택)
 
 ```bash
 ./dev/start-beat
@@ -206,21 +226,6 @@ uv run dotenv -f .env run --no-override -- python -m app   # gevent pywsgi 서�
 ```
 
 스케줄 트리거, 정리(retention) 작업 등 주기 작업이 필요할 때 실행합니다. `KNOWLEDGE_FS_LIFECYCLE_WORKER_ENABLED=true`인 경우 필수입니다.
-
-### 4.6 실행 순서 요약
-
-```bash
-# 최초 1회
-./dev/setup
-#   → api/.env, web/.env.local, docker/middleware.env 검토
-
-# 매번 (각각 별도 터미널)
-./dev/start-docker-compose   # 1. 미들웨어
-./dev/start-api              # 2. API      :5001 (마이그레이션 포함)
-./dev/start-worker           # 3. Worker
-./dev/start-web              # 4. Web      :3000
-./dev/start-beat             # 5. (선택) Beat
-```
 
 ---
 
