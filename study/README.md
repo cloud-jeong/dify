@@ -22,24 +22,25 @@ docker compose -f docker-compose.middleware.yaml up -d redis ssrf_proxy
 
 ## 예제 목록
 
-| #   | 기술                                  | 보여주는 것                                                                      | Dify 의 실제 위치                                                        | 외부 의존         |
-| --- | ------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------- |
-| 01  | **Pydantic v2 / pydantic-settings**   | 환경변수 → 타입 검증된 설정, 다중 상속 설정 합성, 요청 payload 검증, JSON Schema | `configs/app_config.py`, `controllers/**`                                | -                 |
-| 02  | **Flask App Factory**                 | `create_app()`, `ext_*.init_app()` 순차 초기화, Blueprint, 공통 에러 핸들러      | `app_factory.py`, `extensions/ext_*.py`                                  | -                 |
-| 03  | **Flask-RESTX**                       | `Namespace` / `Resource`, Pydantic 스키마 등록, OpenAPI 문서                     | `controllers/console/**`, `controllers/common/schema.py`                 | -                 |
-| 04  | **FastOpenAPI**                       | 타입 힌트 기반 라우팅(FastAPI 스타일) on Flask                                   | `controllers/fastopenapi.py`, `extensions/ext_fastopenapi.py`            | -                 |
-| 05  | **SQLAlchemy 2.0 / Flask-SQLAlchemy** | `Mapped[]` 모델, naming convention, TypeDecorator, `select()` 쿼리, sessionmaker | `models/`, `core/db/session_factory.py`                                  | - (SQLite)        |
-| 06  | **Flask-Migrate (Alembic)**           | init → autogenerate → upgrade → downgrade                                        | `migrations/`, `extensions/ext_migrate.py`                               | - (SQLite)        |
-| 07  | **Flask-Login + PyJWT**               | `request_loader` 로 Bearer JWT 인증, 만료/변조 처리                              | `extensions/ext_login.py`, `libs/passport.py`                            | -                 |
-| 08  | **Redis**                             | 캐시, 분산 락, Lua Rate Limit, Pub/Sub, Streams, Pipeline                        | `extensions/ext_redis.py`, `libs/helper.py`, `libs/broadcast_channel/`   | Redis             |
-| 09  | **Celery**                            | FlaskTask(app_context), 큐 분리, `.delay()`, retry, beat 스케줄                  | `extensions/ext_celery.py`, `tasks/`, `schedule/`                        | Redis             |
-| 10  | **gevent**                            | monkey patch, greenlet 동시성, Pool, CPU 바운드 주의점                           | `gunicorn.conf.py`, `celery_entrypoint.py`                               | -                 |
-| 11  | **Gunicorn**                          | sync vs gevent vs GeventWebSocketWorker 처리량 비교                              | `docker/entrypoint.sh`, `gunicorn.conf.py`                               | -                 |
-| 12  | **SSE 스트리밍 (httpx-sse)**          | `text/event-stream` 응답, `data:`/`event: ping` 포맷, 클라이언트 파싱            | `core/app/apps/base_app_generator.py`, `libs/helper.py`                  | -                 |
-| 13  | **python-socketio**                   | 토큰 인증 connect, room, relay 브로드캐스트, RedisManager                        | `extensions/ext_socketio.py`, `controllers/console/socketio/workflow.py` | (선택) Redis      |
-| 14  | **graphon (워크플로 엔진)**           | 커스텀 노드 + NodeFactory + GraphEngine 이벤트 스트림                            | `core/workflow/`, `graphon` 패키지                                       | -                 |
-| 15  | **httpx**                             | 타임아웃, 재시도/백오프, 스트리밍, 이벤트 훅, **SSRF 프록시 차단**               | `core/helper/ssrf_proxy.py`                                              | (선택) ssrf_proxy |
-| 16  | **OpenTelemetry**                     | TracerProvider, Flask/SQLAlchemy/httpx 자동 계측, 수동 span, X-Trace-Id          | `extensions/ext_otel.py`, `extensions/otel/`                             | -                 |
+| #   | 기술                                  | 보여주는 것                                                                      | Dify 의 실제 위치                                                                | 외부 의존         |
+| --- | ------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------- |
+| 01  | **Pydantic v2 / pydantic-settings**   | 환경변수 → 타입 검증된 설정, 다중 상속 설정 합성, 요청 payload 검증, JSON Schema | `configs/app_config.py`, `controllers/**`                                        | -                 |
+| 02  | **Flask App Factory**                 | `create_app()`, `ext_*.init_app()` 순차 초기화, Blueprint, 공통 에러 핸들러      | `app_factory.py`, `extensions/ext_*.py`                                          | -                 |
+| 03  | **Flask-RESTX**                       | `Namespace` / `Resource`, Pydantic 스키마 등록, OpenAPI 문서                     | `controllers/console/**`, `controllers/common/schema.py`                         | -                 |
+| 04  | **FastOpenAPI**                       | 타입 힌트 기반 라우팅(FastAPI 스타일) on Flask                                   | `controllers/fastopenapi.py`, `extensions/ext_fastopenapi.py`                    | -                 |
+| 05  | **SQLAlchemy 2.0 / Flask-SQLAlchemy** | `Mapped[]` 모델, naming convention, TypeDecorator, `select()` 쿼리, sessionmaker | `models/`, `core/db/session_factory.py`                                          | - (SQLite)        |
+| 06  | **Flask-Migrate (Alembic)**           | init → autogenerate → upgrade → downgrade                                        | `migrations/`, `extensions/ext_migrate.py`                                       | - (SQLite)        |
+| 07  | **Flask-Login + PyJWT**               | `request_loader` 로 Bearer JWT 인증, 만료/변조 처리                              | `extensions/ext_login.py`, `libs/passport.py`                                    | -                 |
+| 08  | **Redis**                             | 캐시, 분산 락, Lua Rate Limit, Pub/Sub, Streams, Pipeline                        | `extensions/ext_redis.py`, `libs/helper.py`, `libs/broadcast_channel/`           | Redis             |
+| 09  | **Celery**                            | FlaskTask(app_context), 큐 분리, `.delay()`, retry, beat 스케줄                  | `extensions/ext_celery.py`, `tasks/`, `schedule/`                                | Redis             |
+| 10  | **gevent**                            | monkey patch, greenlet 동시성, Pool, CPU 바운드 주의점                           | `gunicorn.conf.py`, `celery_entrypoint.py`                                       | -                 |
+| 11  | **Gunicorn**                          | sync vs gevent vs GeventWebSocketWorker 처리량 비교                              | `docker/entrypoint.sh`, `gunicorn.conf.py`                                       | -                 |
+| 12  | **SSE 스트리밍 (httpx-sse)**          | `text/event-stream` 응답, `data:`/`event: ping` 포맷, 클라이언트 파싱            | `core/app/apps/base_app_generator.py`, `libs/helper.py`                          | -                 |
+| 13  | **python-socketio**                   | 토큰 인증 connect, room, relay 브로드캐스트, RedisManager                        | `extensions/ext_socketio.py`, `controllers/console/socketio/workflow.py`         | (선택) Redis      |
+| 14  | **graphon (워크플로 엔진)**           | 커스텀 노드 + NodeFactory + GraphEngine 이벤트 스트림                            | `core/workflow/`, `graphon` 패키지                                               | -                 |
+| 15  | **httpx**                             | 타임아웃, 재시도/백오프, 스트리밍, 이벤트 훅, **SSRF 프록시 차단**               | `core/helper/ssrf_proxy.py`                                                      | (선택) ssrf_proxy |
+| 16  | **OpenTelemetry**                     | TracerProvider, Flask/SQLAlchemy/httpx 자동 계측, 수동 span, X-Trace-Id          | `extensions/ext_otel.py`, `extensions/otel/`                                     | -                 |
+| 17  | **Chat 스레드 모델**                  | 워커 스레드(LLM) → `queue.Queue` → 요청 스레드 `listen()` → SSE, stop flag, ping | `core/app/apps/chat/app_generator.py`, `core/app/apps/base_app_queue_manager.py` | -                 |
 
 > Dify API 서버의 Swagger(OpenAPI) 문서 경로는 [SWAGGER.md](SWAGGER.md)를 참고하세요.
 
@@ -50,7 +51,7 @@ docker compose -f docker-compose.middleware.yaml up -d redis ssrf_proxy
 3. **인증**: 07
 4. **비동기/인프라**: 08 → 09 → 10 → 11 (Redis, 백그라운드 작업, 동시성 모델, 서버)
 5. **실시간**: 12 → 13 (SSE 스트리밍, WebSocket 협업)
-6. **Dify 핵심**: 14 (워크플로 엔진)
+6. **Dify 핵심**: 17 (Chat 스레드 모델, 12 다음 권장) → 14 (워크플로 엔진)
 7. **운영**: 15 → 16 (외부 호출 보안, 관측성)
 
 ## 한 장으로 보는 요청 흐름
